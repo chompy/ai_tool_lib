@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ai-lib"
+name = "ai_tool_lib"
 dynamic = ["version"]
-description = ''
+description = 'Library for creating AI chat bot that uses tools to perform tasks and answer questions.'
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
