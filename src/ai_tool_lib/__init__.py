@@ -8,16 +8,12 @@ from ai_tool_lib.bot.results import BotResults as _BotResults
 from ai_tool_lib.bot.session import BotSession as _BotSession
 from ai_tool_lib.bot.tool.base_tool import BaseTool as _BaseTool
 from ai_tool_lib.bot.tool.basic_tool import BasicTool as _BasicTool
+from ai_tool_lib.bot.tool.property import PropertyDefinition as _PropertyDefinition
 
 get_bot_client = _get_bot_client
-
-
 BotSession = _BotSession
-
-
 BotResults = _BotResults
-
-
 BaseTool = _BaseTool
 Tool = _BaseTool
 BasicTool = _BasicTool
+PropertyDefinition = _PropertyDefinition
