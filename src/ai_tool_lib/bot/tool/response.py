@@ -4,10 +4,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, TypeAlias, Union
 
 from pydantic import BaseModel
-from typing import TypeAlias
 
 
 class ToolBotResponse(BaseModel):

@@ -84,7 +84,7 @@ class OpenAIBotClient(BaseBotClient):
                     description=t.description(),
                     parameters={
                         "type": "object",
-                        "properties": {p.name: p.to_dict() for p in t.properties()},
+                        "properties": {p.name: p.to_json_schema() for p in t.properties()},
                         "required": [p.name for p in filter(lambda p: p.required, t.properties())],
                     },
                 ),

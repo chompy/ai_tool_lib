@@ -24,6 +24,9 @@ class ToolHandler:
         if not self.tools:
             err_msg = "tool handler requires at least one tool"
             raise ToolListEmptyError(err_msg)
+        for tool in self.tools:
+            for prop in tool.properties():
+                prop.validate_property()
 
     def call(self, name: str, args: dict) -> ToolResponse:
         """
@@ -39,7 +42,7 @@ class ToolHandler:
                 if tool.name() == name:
                     # check properties
                     for prop in tool.properties():
-                        prop.check_value(args.get(prop.name), name)
+                        prop.validate_property_value(args.get(prop.name), name)
                     # call tool
                     resp = tool.execute(**args)
                     self._log(

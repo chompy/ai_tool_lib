@@ -9,8 +9,8 @@ from ai_tool_lib.bot.tool.property import PropertyDefinition
 from ai_tool_lib.bot.tool.response import ToolResponse
 
 
-class SimpleTool(BaseTool):
-    """Basic implementation of tool."""
+class BasicTool(BaseTool):
+    """Basic implementation of a tool."""
 
     def __init__(
         self,
