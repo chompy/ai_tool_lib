@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Any, Union
 
 from pydantic import BaseModel
-from typing_extensions import TypeAlias
+from typing import TypeAlias
 
 
 class ToolBotResponse(BaseModel):
