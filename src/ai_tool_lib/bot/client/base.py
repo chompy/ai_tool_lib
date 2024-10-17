@@ -98,13 +98,23 @@ class BaseBotClient:
                         raise
                     session.messages.append(BotMessage(role=BotMessageRole.USER, content=e.retry_message()))
                     self._log(
-                        f"Bot malformed response. Retry #{err_retry_iter+1}", level=logging.WARNING, retry_number=err_retry_iter+1,
-                        error_class=e.__class__.__name__, error=str(e), retry_message=e.retry_message(), session_uid=session.uid
+                        f"Bot malformed response. Retry #{err_retry_iter+1}",
+                        level=logging.WARNING,
+                        retry_number=err_retry_iter + 1,
+                        error_class=e.__class__.__name__,
+                        error=str(e),
+                        retry_message=e.retry_message(),
+                        session_uid=session.uid,
                     )
 
             # if tool returns a user response then we're done
             if results.tool_calls and isinstance(results.tool_calls[-1].response, ToolUserResponse):
-                self._log("User response received.", response=results.tool_calls[-1].response, results=results, session_uid=session.uid)
+                self._log(
+                    "User response received.",
+                    response=results.tool_calls[-1].response,
+                    results=results,
+                    session_uid=session.uid,
+                )
                 return results
 
         err_msg = "bot reached iteration limit without producing a user response"

@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from ai_tool_lib.bot.session import BotSession
 from ai_tool_lib.bot.tool.response import ToolResponse, ToolUserResponse
+from ai_tool_lib.utils.uuid import _generate_uuid
 
 
 class BotToolCall(BaseModel):
@@ -28,6 +29,9 @@ class BotToolCall(BaseModel):
 
 class BotResults(BaseModel):
     """The results of a bot query."""
+
+    uid: str
+    """ Unique ID for this result. """
 
     created: datetime.datetime
     """ Time results were generated. """
@@ -55,7 +59,13 @@ class BotResults(BaseModel):
         """Create new results."""
         if not session:
             session = BotSession.new()
-        return cls(prompt=prompt, tool_calls=[], created=datetime.datetime.now(tz=datetime.UTC), session=session)
+        return cls(
+            uid=_generate_uuid(),
+            prompt=prompt,
+            tool_calls=[],
+            created=datetime.datetime.now(tz=datetime.UTC),
+            session=session,
+        )
 
     @property
     def response(self) -> dict[str, Any]:
