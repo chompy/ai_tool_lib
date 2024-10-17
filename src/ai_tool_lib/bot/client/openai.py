@@ -9,17 +9,24 @@ from typing import TYPE_CHECKING
 
 import openai
 from openai.types.chat import (
+    ChatCompletionAssistantMessageParam,
+    ChatCompletionFunctionMessageParam,
+    ChatCompletionMessageParam,
     ChatCompletionMessageToolCall,
+    ChatCompletionMessageToolCallParam,
+    ChatCompletionSystemMessageParam,
     ChatCompletionToolMessageParam,
     ChatCompletionToolParam,
+    ChatCompletionUserMessageParam,
 )
+from openai.types.chat.chat_completion_message_tool_call_param import Function
 from openai.types.shared_params.function_definition import FunctionDefinition
 
 from ai_tool_lib.bot.client.base import BaseBotClient
+from ai_tool_lib.bot.message import BotMessage, BotMessageRole, BotToolMessage
 from ai_tool_lib.bot.results import BotResults, BotToolCall
-from ai_tool_lib.bot.tool.response import ToolResponse, ToolUserResponse
+from ai_tool_lib.bot.tool.response import ToolBotResponse, ToolResponse, ToolUserResponse
 from ai_tool_lib.error.bot import UnexpectedBotResponseError
-from ai_tool_lib.utils.openai import chat_completion_from_dict
 
 if TYPE_CHECKING:
     from ai_tool_lib.bot.tool.handler import ToolHandler
@@ -38,10 +45,10 @@ class OpenAIBotClient(BaseBotClient):
     def name() -> str:
         return "openai"
 
-    def _handle_chat_completion(self, messages: list[dict], results: BotResults) -> list[dict]:
+    def _handle_chat_completion(self, messages: list[BotMessage], results: BotResults):
         tool_handler = self._get_tool_handler(results)
         response = self.client.chat.completions.create(
-            messages=[chat_completion_from_dict(m) for m in messages],
+            messages=[self._chat_completion_from_bot_message(m) for m in messages],
             model=self.model,
             temperature=0.2,
             top_p=0.1,
@@ -51,9 +58,21 @@ class OpenAIBotClient(BaseBotClient):
         if len(response.choices) == 0:
             msg = "empty response from chat completion endpoint"
             raise UnexpectedBotResponseError(msg, results=results)
-        out = []
+
         response_message = response.choices[0].message
-        out.append(response_message.to_dict(mode="json"))
+        out = [
+            BotMessage(
+                role=BotMessageRole.BOT,
+                content=response_message.content,
+                tool_calls=[
+                    BotToolMessage(id=t.id, name=t.function.name, args=t.function.arguments)
+                    for t in response_message.tool_calls
+                ]
+                if response_message.tool_calls
+                else None,
+            )
+        ]
+
         # make tool calls
         if response_message.tool_calls:
             for call in response_message.tool_calls:
@@ -63,10 +82,11 @@ class OpenAIBotClient(BaseBotClient):
                 )
                 # tool provided a user answer
                 if isinstance(resp, ToolUserResponse):
-                    out.append(ChatCompletionToolMessageParam(content="(done)", role="tool", tool_call_id=call.id))
+                    out.append(BotMessage(role=BotMessageRole.TOOL, content="(done)", tool_call_id=call.id))
                     break
                 # tool provided a response for the bot to read
-                out.append(ChatCompletionToolMessageParam(content=resp.content, role="tool", tool_call_id=call.id))
+                if isinstance(resp, ToolBotResponse):
+                    out.append(BotMessage(role=BotMessageRole.TOOL, content=resp.content, tool_call_id=call.id))
         # add token usages
         if response.usage:
             results.input_tokens += response.usage.prompt_tokens
@@ -92,3 +112,27 @@ class OpenAIBotClient(BaseBotClient):
             )
             for t in tool_handler.tools
         ]
+
+    def _chat_completion_from_bot_message(self, message: BotMessage) -> ChatCompletionMessageParam:
+        dump = message.model_dump(mode="json")
+        match message.role:
+            case BotMessageRole.FUNC:
+                return ChatCompletionFunctionMessageParam(**dump)
+            case BotMessageRole.SYSTEM:
+                return ChatCompletionSystemMessageParam(**dump)
+            case BotMessageRole.TOOL:
+                return ChatCompletionToolMessageParam(**dump)
+            case BotMessageRole.USER:
+                return ChatCompletionUserMessageParam(**dump)
+            case BotMessageRole.BOT:
+                tool_calls = []
+                if message.tool_calls:
+                    tool_calls = [
+                        ChatCompletionMessageToolCallParam(
+                            type="function", id=t.id, function=Function(name=t.name, arguments=t.args)
+                        )
+                        for t in message.tool_calls
+                    ]
+                dump["tool_calls"] = tool_calls
+
+                return ChatCompletionAssistantMessageParam(**dump)

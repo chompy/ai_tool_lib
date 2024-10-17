@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 from ai_tool_lib import BasicTool, get_bot_client
 from ai_tool_lib.bot.tool.property import PropertyDefinition
 from ai_tool_lib.bot.tool.response import ToolUserResponse
 
 client = get_bot_client(
     "openai",
-    api_key="",
+    api_key=os.environ.get("OPENAI_API_KEY"),
     tools=[
         BasicTool(
             "done",

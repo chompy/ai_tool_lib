@@ -8,11 +8,12 @@ import logging
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Callable, Iterable
 
+from ai_tool_lib.bot.message import BotMessage, BotMessageRole
 from ai_tool_lib.bot.results import BotResults
 from ai_tool_lib.bot.session import BotSession
 from ai_tool_lib.bot.tool.handler import ToolHandler
 from ai_tool_lib.bot.tool.response import ToolUserResponse
-from ai_tool_lib.error.bot import BotIterationLimitError, BotTokenLimitError
+from ai_tool_lib.error.bot import BotIterationLimitError, BotTokenLimitError, MalformedBotResponseError
 
 if TYPE_CHECKING:
     from ai_tool_lib.bot.tool.base_tool import BaseTool
@@ -66,9 +67,11 @@ class BaseBotClient:
 
         if not session:
             session = BotSession.new()
+            session.messages = [BotMessage(role=BotMessageRole.SYSTEM, content=self.system_prompt)]
 
         self._log("Init bot.", prompt=prompt, session_uid=session.uid)
-        session.messages = [{"role": "system", "content": self.system_prompt}, {"role": "user", "content": prompt}]
+
+        session.messages.append(BotMessage(role=BotMessageRole.USER, content=prompt))
         results = BotResults.new(prompt=prompt, session=session)
 
         for iteration in range(1, self.iteration_limit + 1):
@@ -84,9 +87,17 @@ class BaseBotClient:
             if iteration == self.iteration_limit:
                 self._log("Iteration limit reached", iteration_limit=self.iteration_limit)
                 if self.iteration_limit_prompt:
-                    session.messages.append({"role": "user", "content": self.iteration_limit_prompt})
+                    session.messages.append(BotMessage(role=BotMessageRole.USER, content=self.iteration_limit_prompt))
 
-            session.messages += self._handle_chat_completion(messages=session.messages, results=results)
+            # submit messages to llm, allow it to retry if malformed response is returned
+            for err_retry_iter in range(self.error_retry_limit):
+                try:
+                    session.messages += self._handle_chat_completion(messages=session.messages, results=results)
+                except MalformedBotResponseError as e:
+                    if err_retry_iter >= self.error_retry_limit - 1:
+                        raise
+                    # messages.append(dict(ChatCompletionUserMessageParam(content=e.retry_message(), role="user")))
+                    session.messages.append(BotMessage(role=BotMessageRole.USER, content=e.retry_message()))
 
             # if tool returns a user response then we're done
             if results.tool_calls and isinstance(results.tool_calls[-1].response, ToolUserResponse):
@@ -103,13 +114,16 @@ class BaseBotClient:
         ...
 
     @abstractmethod
-    def _handle_chat_completion(self, messages: list[dict], results: BotResults) -> list[dict]:
+    def _handle_chat_completion(self, messages: list[BotMessage], results: BotResults) -> list[BotMessage]:
         """
         Submit current context to LLM as chat completion.
         :param messages: Chat history with LLM.
         :param results: Current results
         """
         ...
+
+    def _generate_message(self, role: str, content: str) -> dict:
+        return {"role": role, "content": content}
 
     def _get_tool_handler(self, results: BotResults) -> ToolHandler:
         tools = []

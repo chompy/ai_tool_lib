@@ -65,3 +65,4 @@ exclude_lines = [
 
 [tool.ruff.lint.extend-per-file-ignores]
 "examples/*" = ["ALL"]
+"src/ai_tool_lib/bot/session.py" = ["TCH001"]

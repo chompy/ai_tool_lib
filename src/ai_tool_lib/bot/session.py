@@ -9,6 +9,7 @@ from typing import Self
 
 from pydantic import BaseModel
 
+from ai_tool_lib.bot.message import BotMessage
 from ai_tool_lib.utils.uuid import _generate_uuid
 
 
@@ -25,7 +26,7 @@ class BotSession(BaseModel):
     name: str | None = None
     """ User friendly name for the session. """
 
-    messages: list[dict]
+    messages: list[BotMessage]
     """ Bot messages from previous sessions. """
 
     @classmethod
