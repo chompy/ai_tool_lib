@@ -75,7 +75,7 @@ class BaseBotClient:
         results = BotResults.new(prompt=prompt, session=session)
 
         for iteration in range(1, self.iteration_limit + 1):
-            self._log(f"Iteration {iteration}.", iteration=iteration, results=results)
+            self._log(f"Iteration {iteration}.", iteration=iteration, results=results, session_uid=session.uid)
             results.iterations = iteration
 
             # check token limit
@@ -85,7 +85,7 @@ class BaseBotClient:
 
             # on last iteration add iteration limit prompt
             if iteration == self.iteration_limit:
-                self._log("Iteration limit reached", iteration_limit=self.iteration_limit)
+                self._log("Iteration limit reached", iteration_limit=self.iteration_limit, session_uid=session.uid)
                 if self.iteration_limit_prompt:
                     session.messages.append(BotMessage(role=BotMessageRole.USER, content=self.iteration_limit_prompt))
 
@@ -96,12 +96,15 @@ class BaseBotClient:
                 except MalformedBotResponseError as e:
                     if err_retry_iter >= self.error_retry_limit - 1:
                         raise
-                    # messages.append(dict(ChatCompletionUserMessageParam(content=e.retry_message(), role="user")))
                     session.messages.append(BotMessage(role=BotMessageRole.USER, content=e.retry_message()))
+                    self._log(
+                        f"Bot malformed response. Retry #{err_retry_iter+1}", level=logging.WARNING, retry_number=err_retry_iter+1,
+                        error_class=e.__class__.__name__, error=str(e), retry_message=e.retry_message(), session_uid=session.uid
+                    )
 
             # if tool returns a user response then we're done
             if results.tool_calls and isinstance(results.tool_calls[-1].response, ToolUserResponse):
-                self._log("User response received.", results=results)
+                self._log("User response received.", response=results.tool_calls[-1].response, results=results, session_uid=session.uid)
                 return results
 
         err_msg = "bot reached iteration limit without producing a user response"
