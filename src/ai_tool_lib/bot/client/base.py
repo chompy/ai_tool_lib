@@ -93,6 +93,7 @@ class BaseBotClient:
             for err_retry_iter in range(self.error_retry_limit):
                 try:
                     session.messages += self._handle_chat_completion(messages=session.messages, results=results)
+                    break
                 except MalformedBotResponseError as e:
                     if err_retry_iter >= self.error_retry_limit - 1:
                         raise
