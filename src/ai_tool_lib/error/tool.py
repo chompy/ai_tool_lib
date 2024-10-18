@@ -5,18 +5,26 @@
 from __future__ import annotations
 
 from ai_tool_lib.error.bot import MalformedBotResponseError
+from ai_tool_lib.error.user_friendly import UserFriendlyError
 
 
-class ToolPropertyTypeError(TypeError):
+class ToolPropertyTypeError(TypeError, UserFriendlyError):
     """Tool property definition has an invalid property type."""
 
+    def user_friendly_message(self) -> str:
+        return "One or more tools are improperly configured."
 
-class ToolPropertyChoiceTypeError(TypeError):
+class ToolPropertyChoiceTypeError(TypeError, UserFriendlyError):
     """Tool property definition has a choice that does not match the property type."""
 
+    def user_friendly_message(self) -> str:
+        return "One or more tools are improperly configured."
 
-class ToolListEmptyError(Exception):
+class ToolListEmptyError(Exception, UserFriendlyError):
     """Tool handler received empty list of tools."""
+
+    def user_friendly_message(self) -> str:
+        return "No tools have been provided."
 
 
 class ToolPropertyInvalidError(ValueError, MalformedBotResponseError):
