@@ -27,7 +27,7 @@ class ToolListEmptyError(Exception, UserFriendlyError):
         return "No tools have been provided."
 
 
-class ToolPropertyInvalidError(ValueError, MalformedBotResponseError):
+class ToolPropertyInvalidError(ValueError, MalformedBotResponseError, UserFriendlyError):
     """A tool property failed to pass contraint validation."""
 
     def __init__(self, tool_name: str, property_name: str, why: str | None = None) -> None:
@@ -39,8 +39,11 @@ class ToolPropertyInvalidError(ValueError, MalformedBotResponseError):
     def retry_message(self):
         return f"Property '{self.property_name!s}' was invalid in your call to the '{self.tool_name!s}' tool. {(self.why + " ") if self.why else ""}Please try again."
 
+    def user_friendly_message(self) -> str:
+        return "Bot tool call failed to pass constraint validation."
 
-class ToolPropertyMissingError(AttributeError, MalformedBotResponseError):
+
+class ToolPropertyMissingError(AttributeError, MalformedBotResponseError, UserFriendlyError):
     """A required tool property is missing."""
 
     def __init__(self, tool_name: str, property_name: str) -> None:
@@ -51,8 +54,11 @@ class ToolPropertyMissingError(AttributeError, MalformedBotResponseError):
     def retry_message(self):
         return f"A required property, '{self.property_name!s}', was missing in your call to the '{self.tool_name!s}' tool. Please try again."
 
+    def user_friendly_message(self) -> str:
+        return "Bot tool call failed to pass constraint validation."
 
-class ToolNotDefinedError(MalformedBotResponseError):
+
+class ToolNotDefinedError(MalformedBotResponseError, UserFriendlyError):
     """The called tool is not defined."""
 
     def __init__(self, tool_name: str) -> None:
@@ -61,3 +67,6 @@ class ToolNotDefinedError(MalformedBotResponseError):
 
     def retry_message(self):
         return f"You tried to call a non-existent tool, '{self.tool_name!s}'. Please try again."
+
+    def user_friendly_message(self) -> str:
+        return "Bot tried to call an undefined tool."
