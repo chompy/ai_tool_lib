@@ -14,11 +14,13 @@ class ToolPropertyTypeError(TypeError, UserFriendlyError):
     def user_friendly_message(self) -> str:
         return "One or more tools are improperly configured."
 
+
 class ToolPropertyChoiceTypeError(TypeError, UserFriendlyError):
     """Tool property definition has a choice that does not match the property type."""
 
     def user_friendly_message(self) -> str:
         return "One or more tools are improperly configured."
+
 
 class ToolListEmptyError(Exception, UserFriendlyError):
     """Tool handler received empty list of tools."""

@@ -9,7 +9,10 @@ from ai_tool_lib.bot.tool.response import ToolUserResponse
 
 client = get_bot_client(
     "openai",
-    api_key=os.environ.get("OPENAI_API_KEY"),
+    # api_key=os.environ.get("OPENAI_API_KEY"),
+    api_key="123",
+    base_url="http://127.0.0.1:11434/v1",
+    model="llama3.2:3b",
     tools=[
         BasicTool(
             "done",

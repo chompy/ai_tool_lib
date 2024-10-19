@@ -26,7 +26,7 @@ from ai_tool_lib.bot.client.base import BaseBotClient
 from ai_tool_lib.bot.message import BotMessage, BotMessageRole, BotToolMessage
 from ai_tool_lib.bot.results import BotResults, BotToolCall
 from ai_tool_lib.bot.tool.response import ToolBotResponse, ToolResponse, ToolUserResponse
-from ai_tool_lib.error.bot import UnexpectedBotResponseError
+from ai_tool_lib.error.bot import BotNoToolCallError, UnexpectedBotResponseError
 
 if TYPE_CHECKING:
     from ai_tool_lib.bot.tool.handler import ToolHandler
@@ -73,24 +73,30 @@ class OpenAIBotClient(BaseBotClient):
             )
         ]
 
-        # make tool calls
-        if response_message.tool_calls:
-            for call in response_message.tool_calls:
-                resp = self._tool_call(tool_handler, call)
-                results.tool_calls.append(
-                    BotToolCall(tool=call.function.name, args=json.loads(call.function.arguments), response=resp)
-                )
-                # tool provided a user answer
-                if isinstance(resp, ToolUserResponse):
-                    out.append(BotMessage(role=BotMessageRole.TOOL, content="(done)", tool_call_id=call.id))
-                    break
-                # tool provided a response for the bot to read
-                if isinstance(resp, ToolBotResponse):
-                    out.append(BotMessage(role=BotMessageRole.TOOL, content=resp.content, tool_call_id=call.id))
         # add token usages
         if response.usage:
             results.input_tokens += response.usage.prompt_tokens
             results.output_tokens += response.usage.completion_tokens
+
+        # let bot know it must use tool calls if none provided
+        if not response_message.tool_calls:
+            err_msg = "bot did not call a tool"
+            raise BotNoToolCallError(err_msg, results=results)
+
+        # handle tool calls
+        for call in response_message.tool_calls:
+            resp = self._tool_call(tool_handler, call)
+            results.tool_calls.append(
+                BotToolCall(tool=call.function.name, args=json.loads(call.function.arguments), response=resp)
+            )
+            # tool provided a user answer
+            if isinstance(resp, ToolUserResponse):
+                out.append(BotMessage(role=BotMessageRole.TOOL, content="(done)", tool_call_id=call.id))
+                break
+            # tool provided a response for the bot to read
+            if isinstance(resp, ToolBotResponse):
+                out.append(BotMessage(role=BotMessageRole.TOOL, content=resp.content, tool_call_id=call.id))
+
         return out
 
     def _tool_call(self, tool_handler: ToolHandler, tool_call: ChatCompletionMessageToolCall) -> ToolResponse:

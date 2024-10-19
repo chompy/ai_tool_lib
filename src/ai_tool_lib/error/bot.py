@@ -4,9 +4,9 @@
 
 from __future__ import annotations
 
-from ai_tool_lib.error.user_friendly import UserFriendlyError
-
 from typing import TYPE_CHECKING
+
+from ai_tool_lib.error.user_friendly import UserFriendlyError
 
 if TYPE_CHECKING:
     from ai_tool_lib.bot.results import BotResults
@@ -52,6 +52,13 @@ class MalformedBotResponseError(UnexpectedBotResponseError, UserFriendlyError):
 
     def user_friendly_message(self) -> str:
         return "Bot provided a malformed response."
+
+
+class BotNoToolCallError(MalformedBotResponseError):
+    """Bot did not call a tool,"""
+
+    def retry_message(self) -> str:
+        return "You must respond with one or more tool calls. Please try again."
 
 
 class BotTokenLimitError(BotError, UserFriendlyError):
