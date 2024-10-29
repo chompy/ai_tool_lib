@@ -17,6 +17,11 @@ class ToolResponse(BaseModel):
     data: dict[str, Any] | None = None
     """ Data collected from bot response. """
 
+    def __init__(self, /, **data: Any) -> None:
+        super().__init__(**data)
+        if not self.created:
+            self.created = datetime.datetime.now(tz=datetime.UTC)
+
 
 class ToolBotResponse(ToolResponse):
     """A tool response to send back to the bot for further analysis."""
