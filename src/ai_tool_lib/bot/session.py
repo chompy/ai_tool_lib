@@ -10,7 +10,7 @@ from typing import Self
 from pydantic import BaseModel
 
 from ai_tool_lib.bot.message import BotMessage
-from ai_tool_lib.utils.uuid import _generate_uuid
+from ai_tool_lib.utils.uuid import generate_uuid
 
 
 class BotSession(BaseModel):
@@ -33,4 +33,4 @@ class BotSession(BaseModel):
     def new(cls) -> Self:
         """Create a new session."""
         now = datetime.datetime.now(tz=datetime.UTC)
-        return cls(uid=_generate_uuid(), created=now, updated=now, messages=[])
+        return cls(uid=generate_uuid(), created=now, updated=now, messages=[])

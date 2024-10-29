@@ -4,23 +4,32 @@
 
 from __future__ import annotations
 
-from typing import Any, TypeAlias, Union
+import datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
 
-class ToolBotResponse(BaseModel):
+class ToolResponse(BaseModel):
+    created: datetime.datetime | None = None
+    """ Time response was created. """
+
+    data: dict[str, Any] | None = None
+    """ Data collected from bot response. """
+
+
+class ToolBotResponse(ToolResponse):
     """A tool response to send back to the bot for further analysis."""
+
+    type: Literal["bot"] = "bot"
+    """ Response type name. """
 
     content: str
     """ The response content for the bot to analyze. """
 
 
-class ToolUserResponse(BaseModel):
+class ToolUserResponse(ToolResponse):
     """A tool response to show to the user."""
 
-    parameters: dict[str, Any]
-    """ Data passed back by the bot. """
-
-
-ToolResponse: TypeAlias = Union[ToolBotResponse, ToolUserResponse]
+    type: Literal["user"] = "user"
+    """ Response type name. """

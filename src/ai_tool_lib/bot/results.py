@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from ai_tool_lib.bot.session import BotSession
 from ai_tool_lib.bot.tool.response import ToolResponse, ToolUserResponse
-from ai_tool_lib.utils.uuid import _generate_uuid
+from ai_tool_lib.utils.uuid import generate_uuid
 
 
 class BotToolCall(BaseModel):
@@ -60,7 +60,7 @@ class BotResults(BaseModel):
         if not session:
             session = BotSession.new()
         return cls(
-            uid=_generate_uuid(),
+            uid=generate_uuid(),
             prompt=prompt,
             tool_calls=[],
             created=datetime.datetime.now(tz=datetime.UTC),
@@ -68,7 +68,14 @@ class BotResults(BaseModel):
         )
 
     @property
-    def response(self) -> dict[str, Any]:
-        if not self.tool_calls or not isinstance(self.tool_calls[-1].response, ToolUserResponse):
-            return {}
-        return self.tool_calls[-1].response.parameters
+    def response(self) -> ToolUserResponse | None:
+        return (
+            self.tool_calls[-1].response
+            if self.tool_calls and isinstance(self.tool_calls[-1].response, ToolUserResponse)
+            else None
+        )
+
+    @property
+    def response_data(self) -> dict[str, Any]:
+        resp = self.response
+        return resp.data if resp and resp.data else {}
