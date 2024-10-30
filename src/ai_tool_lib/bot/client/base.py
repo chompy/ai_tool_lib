@@ -69,7 +69,7 @@ class BaseBotClient:
             session = BotSession.new()
             session.messages = [BotMessage(role=BotMessageRole.SYSTEM, content=self.system_prompt)]
 
-        self._log("Init bot.", prompt=prompt, session_uid=session.uid)
+        self._log("Init bot.", prompt=prompt, client=self.name(), session_uid=session.uid)
 
         session.messages.append(BotMessage(role=BotMessageRole.USER, content=prompt))
         results = BotResults.new(prompt=prompt, session=session)

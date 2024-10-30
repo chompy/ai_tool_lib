@@ -40,6 +40,7 @@ class OpenAIBotClient(BaseBotClient):
             base_url=base_url,
         )
         self.model = model
+        self._log("Using OpenAI client.", base_url=base_url, model=model)
 
     @staticmethod
     def name() -> str:
