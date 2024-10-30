@@ -5,12 +5,12 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, Literal
+from typing import Any, Literal, Union
 
 from pydantic import BaseModel
 
 
-class ToolResponse(BaseModel):
+class BaseToolResponse(BaseModel):
     created: datetime.datetime | None = None
     """ Time response was created. """
 
@@ -23,7 +23,7 @@ class ToolResponse(BaseModel):
             self.created = datetime.datetime.now(tz=datetime.UTC)
 
 
-class ToolBotResponse(ToolResponse):
+class ToolBotResponse(BaseToolResponse):
     """A tool response to send back to the bot for further analysis."""
 
     type: Literal["bot"] = "bot"
@@ -33,8 +33,11 @@ class ToolBotResponse(ToolResponse):
     """ The response content for the bot to analyze. """
 
 
-class ToolUserResponse(ToolResponse):
+class ToolUserResponse(BaseToolResponse):
     """A tool response to show to the user."""
 
     type: Literal["user"] = "user"
     """ Response type name. """
+
+
+ToolResponse = Union[ToolBotResponse, ToolUserResponse]
